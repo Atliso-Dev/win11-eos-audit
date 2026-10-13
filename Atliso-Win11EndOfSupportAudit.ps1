@@ -41,8 +41,8 @@ $LogPath    = Join-Path $env:LOCALAPPDATA 'Atliso\Win11EndOfSupportAudit.log'
 # Edition (GetProductInfo product type, reported by Intune as skuNumber) decides the support track.
 $ConsumerSkus   = 98,99,100,101,48,49,161,162,164,165   # Home, Pro, Pro for Workstations, Pro Education
 $SeSkus         = 178,179                               # Windows 11 SE: 24H2 is its last version
-$EnterpriseSkus = 4,27,121,122,175,188                  # Enterprise, Education, multi-session, IoT Enterprise
-$LtscSkus       = 125,126,191                           # LTSC: separate long-term lifecycle, never flagged
+$EnterpriseSkus = 4,27,72,84,121,122,175,188            # Enterprise (+ N, Evaluation), Education, multi-session, IoT Enterprise
+$LtscSkus       = 125,126,129,130,191                   # LTSC (+ N, Evaluation), IoT LTSC: separate lifecycle, never flagged
 
 # Last supported day per Microsoft's lifecycle pages. Matched on the exact build:
 # a build that isn't listed is reported as Unknown rather than given another release's dates.
@@ -140,10 +140,15 @@ $rows = foreach ($d in $devices) {
   if ($null -ne $d.skuNumber) { $sku = [int]$d.skuNumber }
 
   $track = 'Unknown'
+  $family = [string]$d.skuFamily
   if ($LtscSkus -contains $sku) { $track = 'LTSC' }
   elseif ($EnterpriseSkus -contains $sku) { $track = 'Enterprise' }
   elseif ($SeSkus -contains $sku) { $track = 'SE' }
   elseif ($ConsumerSkus -contains $sku) { $track = 'HomePro' }
+  # A product type not listed above: fall back to the edition name Intune reports alongside it.
+  elseif ($family -match 'EnterpriseS|LTSC') { $track = 'LTSC' }
+  elseif ($family -match '^(Enterprise|Education|IoTEnterprise)') { $track = 'Enterprise' }
+  elseif ($family -match '^(Pro|Professional|Core|Home)') { $track = 'HomePro' }
 
   $life = $null
   if ($build -and $Lifecycle.ContainsKey($build)) { $life = $Lifecycle[$build] }
@@ -158,7 +163,7 @@ $rows = foreach ($d in $devices) {
   } elseif (-not $life) {
     $note = 'Build not in the lifecycle table, check manually'
   } elseif ($track -eq 'Unknown') {
-    $note = 'Edition not reported, check the device'
+    $note = $(if ($family) { "Edition $family (SKU $sku) not recognised, check the device" } else { 'Edition not reported, check the device' })
   } else {
     $lastDay = [datetime]::ParseExact($(if ($track -eq 'Enterprise') { $life.Enterprise } else { $life.Consumer }), 'yyyy-MM-dd', $null)
     $daysLeft = ($lastDay - $today).Days
