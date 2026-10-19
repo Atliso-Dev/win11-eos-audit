@@ -1,3 +1,19 @@
+<#PSScriptInfo
+.VERSION 1.0.2
+.GUID a5de3ed9-0800-47bc-b68e-092904db644e
+.AUTHOR Atliso
+.COMPANYNAME Atliso
+.COPYRIGHT (c) 2026 Atliso. MIT License.
+.TAGS Intune Windows11 Lifecycle EndOfSupport 24H2 Graph Audit ReadOnly
+.LICENSEURI https://github.com/Atliso-Dev/win11-eos-audit/blob/main/LICENSE
+.PROJECTURI https://atliso.com/blog/windows-11-24h2-end-of-support-intune
+.REQUIREDMODULES Microsoft.Graph.Authentication
+.EXTERNALMODULEDEPENDENCIES
+.REQUIREDSCRIPTS
+.EXTERNALSCRIPTDEPENDENCIES
+.RELEASENOTES Gallery metadata added. Script logic unchanged from v1.0.1.
+#>
+
 <#
 .SYNOPSIS
   Atliso Windows 11 End of Support Audit. Read-only.
