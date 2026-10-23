@@ -44,11 +44,39 @@ Describe 'Atliso-Win11EndOfSupportAudit' {
     $r.Rows['ent'].LastSupportedDay | Should -Be '2027-10-12'
   }
 
-  It 'LTSC on build 26100 is never flagged' {
-    $r = Invoke-Audit @((Device 'ltsc' '10.0.26100.1' 125 'EnterpriseS'))
-    $r.Rows['ltsc'].Status | Should -Be 'LTSC'
-    $r.Rows['ltsc'].LastSupportedDay | Should -BeNullOrEmpty
-    $r.Exit | Should -Be 0
+  It 'LTSC 2024 (build 26100) is dated as LTSC, not as 24H2: Enterprise 2029, IoT Enterprise 2034' {
+    $r = Invoke-Audit @((Device 'ltsc' '10.0.26100.1' 125 'EnterpriseS'), (Device 'iot' '10.0.26100.1' 191 'IoTEnterpriseS'))
+    $r.Rows['ltsc'].Release | Should -Be 'LTSC 2024'
+    $r.Rows['ltsc'].LastSupportedDay | Should -Be '2029-10-09'
+    $r.Rows['iot'].LastSupportedDay | Should -Be '2034-10-10'
+    $r.Rows['ltsc'].SupportTrack | Should -Be 'LTSC'
+  }
+
+  It 'Windows 10 LTSC 2021 gets its own end date instead of being skipped' {
+    $r = Invoke-Audit @((Device 'w10ltsc' '10.0.19044.7807' 125 'EnterpriseS'), (Device 'w10iot' '10.0.19044.7807' 191 'IoTEnterpriseS'))
+    $r.Rows['w10ltsc'].Release | Should -Be 'LTSC 2021'
+    $r.Rows['w10ltsc'].LastSupportedDay | Should -Be '2027-01-12'
+    $r.Rows['w10ltsc'].Status | Should -BeIn @('Supported', 'EndingSoon', 'OutOfSupport')
+    $r.Rows['w10iot'].LastSupportedDay | Should -Be '2032-01-13'
+  }
+
+  It 'LTSB 2016 is out of support (ended 13 Oct 2026)' {
+    $r = Invoke-Audit @((Device 'ltsb' '10.0.14393.9612' 125 'EnterpriseS'))
+    $r.Rows['ltsb'].LastSupportedDay | Should -Be '2026-10-13'
+    if ((Get-Date).Date -gt [datetime]'2026-10-13') { $r.Rows['ltsb'].Status | Should -Be 'OutOfSupport'; $r.Exit | Should -Be 1 }
+  }
+
+  It 'an LTSC build missing from the table says so instead of guessing' {
+    $r = Invoke-Audit @((Device 'odd' '10.0.20348.1' 125 'EnterpriseS'))
+    $r.Rows['odd'].Status | Should -Be 'LTSC'
+    $r.Rows['odd'].Note | Should -Match 'not in the table'
+  }
+
+  It '26H1 (build 28000, new devices only) is dated: Pro 14 Mar 2028, Enterprise 13 Mar 2029' {
+    $r = Invoke-Audit @((Device 'pro' '10.0.28000.3231' 48 'Professional'), (Device 'ent' '10.0.28000.3231' 4 'Enterprise'))
+    $r.Rows['pro'].Release | Should -Be '26H1'
+    $r.Rows['pro'].LastSupportedDay | Should -Be '2028-03-14'
+    $r.Rows['ent'].LastSupportedDay | Should -Be '2029-03-13'
   }
 
   It 'Windows 10 is out of support and sorts first; the run exits 1' {
@@ -94,7 +122,7 @@ Describe 'Atliso-Win11EndOfSupportAudit' {
     It 'every build has a release name and both dates' {
       $src = Get-Content $script:Script -Raw
       $entries = [regex]::Matches($src, "(?m)^\s*(\d{5}) = @\{ Release = '(\d\dH\d)'; Consumer = '(\d{4}-\d{2}-\d{2})'; Enterprise = '(\d{4}-\d{2}-\d{2})' \}")
-      $entries.Count | Should -BeGreaterOrEqual 6
+      $entries.Count | Should -BeGreaterOrEqual 7
       foreach ($e in $entries) { [datetime]$e.Groups[4].Value | Should -BeGreaterThan ([datetime]$e.Groups[3].Value) }
     }
   }
