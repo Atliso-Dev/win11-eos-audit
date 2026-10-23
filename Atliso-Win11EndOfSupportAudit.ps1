@@ -1,5 +1,5 @@
 <#PSScriptInfo
-.VERSION 1.0.2
+.VERSION 1.1.0
 .GUID a5de3ed9-0800-47bc-b68e-092904db644e
 .AUTHOR Atliso
 .COMPANYNAME Atliso
@@ -11,7 +11,7 @@
 .EXTERNALMODULEDEPENDENCIES
 .REQUIREDSCRIPTS
 .EXTERNALSCRIPTDEPENDENCIES
-.RELEASENOTES Gallery metadata added. Script logic unchanged from v1.0.1.
+.RELEASENOTES LTSC devices get their real end date (LTSC 2021 ends 12 Jan 2027). Adds Windows 11 26H1 (build 28000).
 #>
 
 <#
@@ -24,7 +24,7 @@
 
   Windows 11 support is split by edition, not by build. 24H2 is build 26100 on every edition,
   but Home and Pro lose support on 13 October 2026 while Enterprise and Education keep it until
-  12 October 2027, and LTSC 2024 (also 26100) is on a separate long-term lifecycle. Filtering
+  12 October 2027, and LTSC 2024 (also 26100) runs to 2029, or 2034 for IoT Enterprise. Filtering
   Intune by OS version alone gives the wrong list. This script works out the date per device.
 
   Read-only: it signs in with your own account and only reads Intune's managed devices.
@@ -58,17 +58,28 @@ $LogPath    = Join-Path $env:LOCALAPPDATA 'Atliso\Win11EndOfSupportAudit.log'
 $ConsumerSkus   = 98,99,100,101,48,49,161,162,164,165   # Home, Pro, Pro for Workstations, Pro Education
 $SeSkus         = 178,179                               # Windows 11 SE: 24H2 is its last version
 $EnterpriseSkus = 4,27,72,84,121,122,175,188            # Enterprise (+ N, Evaluation), Education, multi-session, IoT Enterprise
-$LtscSkus       = 125,126,129,130,191                   # LTSC (+ N, Evaluation), IoT LTSC: separate lifecycle, never flagged
+$LtscSkus       = 125,126,129,130,191                   # LTSC (+ N, Evaluation), IoT LTSC: dated from $LtscLifecycle below
+$IotLtscSkus    = 191                                   # IoT Enterprise LTSC: longer support than Enterprise LTSC
 
 # Last supported day per Microsoft's lifecycle pages. Matched on the exact build:
 # a build that isn't listed is reported as Unknown rather than given another release's dates.
 $Lifecycle = @{
+  28000 = @{ Release = '26H1'; Consumer = '2028-03-14'; Enterprise = '2029-03-13' }   # new devices only, no in-place update
   26300 = @{ Release = '26H2'; Consumer = '2028-10-09'; Enterprise = '2029-10-09' }
   26200 = @{ Release = '25H2'; Consumer = '2027-10-12'; Enterprise = '2028-10-10' }
   26100 = @{ Release = '24H2'; Consumer = '2026-10-13'; Enterprise = '2027-10-12' }
   22631 = @{ Release = '23H2'; Consumer = '2025-11-11'; Enterprise = '2026-11-10' }
   22621 = @{ Release = '22H2'; Consumer = '2024-10-08'; Enterprise = '2025-10-14' }
   22000 = @{ Release = '21H2'; Consumer = '2023-10-10'; Enterprise = '2024-10-08' }
+}
+
+# LTSC is dated per release, Windows 10 ones included, and IoT Enterprise LTSC runs longer than Enterprise LTSC.
+# Microsoft: learn.microsoft.com/windows/release-health/release-information (Windows 10) and windows11-release-information.
+$LtscLifecycle = @{
+  26100 = @{ Release = 'LTSC 2024'; Enterprise = '2029-10-09'; IoT = '2034-10-10' }
+  19044 = @{ Release = 'LTSC 2021'; Enterprise = '2027-01-12'; IoT = '2032-01-13' }
+  17763 = @{ Release = 'LTSC 2019'; Enterprise = '2029-01-09'; IoT = '2029-01-09' }
+  14393 = @{ Release = 'LTSB 2016'; Enterprise = '2026-10-13'; IoT = '2026-10-13' }
 }
 
 # Licences that step Pro up to Enterprise through subscription activation.
@@ -173,7 +184,18 @@ $rows = foreach ($d in $devices) {
 
   $lastDay = $null; $daysLeft = $null; $status = 'Unknown'; $note = ''
   if ($track -eq 'LTSC') {
-    $status = 'LTSC'; $note = 'Long-term servicing, separate lifecycle'
+    $ltsc = $null
+    if ($build -and $LtscLifecycle.ContainsKey($build)) { $ltsc = $LtscLifecycle[$build] }
+    if ($ltsc) {
+      $release = $ltsc.Release
+      $iot = ($IotLtscSkus -contains $sku) -or ($family -match 'IoT')
+      $lastDay = [datetime]::ParseExact($(if ($iot) { $ltsc.IoT } else { $ltsc.Enterprise }), 'yyyy-MM-dd', $null)
+      $daysLeft = ($lastDay - $today).Days
+      if ($daysLeft -lt 0) { $status = 'OutOfSupport' } elseif ($daysLeft -le $WarnDays) { $status = 'EndingSoon' } else { $status = 'Supported' }
+      $note = $(if ($iot) { 'IoT Enterprise LTSC' } else { 'Enterprise LTSC' })
+    } else {
+      $status = 'LTSC'; $note = 'Long-term servicing build not in the table, check manually'
+    }
   } elseif ($release -eq 'Windows 10') {
     $status = 'OutOfSupport'; $note = 'Windows 10 ended 14 Oct 2025 unless enrolled in ESU'
   } elseif (-not $life) {
