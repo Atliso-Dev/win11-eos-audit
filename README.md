@@ -100,7 +100,7 @@ Windows 11 SE follows the Home/Pro dates, and 24H2 is its last version.
 
 The full walkthrough, including how to move devices to 25H2 or 26H2 with an Intune feature update policy: [Windows 11 24H2 end of support: find every Intune device on it](https://atliso.com/blog/windows-11-24h2-end-of-support-intune)
 
-Want this checked every day across your whole tenant? [Atliso Pro](https://atliso.com/pro) runs it by edition, alongside BitLocker, LAPS and remediation checks. The first scan is free.
+Want this checked every night across every client tenant? [Atliso](https://atliso.com/pro) runs it by edition, alongside BitLocker, LAPS and remediation checks. Start with a 30-day free trial.
 
 ## License
 
