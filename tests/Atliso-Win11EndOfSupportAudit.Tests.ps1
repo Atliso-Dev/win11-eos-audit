@@ -125,5 +125,18 @@ Describe 'Atliso-Win11EndOfSupportAudit' {
       $entries.Count | Should -BeGreaterOrEqual 7
       foreach ($e in $entries) { [datetime]$e.Groups[4].Value | Should -BeGreaterThan ([datetime]$e.Groups[3].Value) }
     }
+
+    It 'every end date is a Tuesday (Microsoft ends servicing on a Patch Tuesday)' {
+      $src = Get-Content $script:Script -Raw
+      $dates = [regex]::Matches($src, "(?:Consumer|Enterprise|IoT) = '(\d{4}-\d{2}-\d{2})'") | ForEach-Object { $_.Groups[1].Value }
+      $dates.Count | Should -BeGreaterOrEqual 14
+      $notTuesday = $dates | Where-Object { ([datetime]$_).DayOfWeek -ne 'Tuesday' }
+      $notTuesday | Should -BeNullOrEmpty
+    }
+
+    It '26H2 Home/Pro ends on 10 October 2028' {
+      $r = Invoke-Audit @((Device 'h2' '10.0.26300.1' 48 'Professional'))
+      $r.Rows['h2'].LastSupportedDay | Should -Be '2028-10-10'
+    }
   }
 }

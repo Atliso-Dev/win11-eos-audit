@@ -2,6 +2,12 @@
 
 Every release is on the [releases page](https://github.com/Atliso-Dev/win11-eos-audit/releases) with its zip, and on [atliso.com](https://atliso.com/tools) under Version history.
 
+## 1.1.1 - unreleased
+
+- Windows 11 26H2 (build 26300) on Home, Pro, Pro Education and Pro for Workstations now shows its correct last day of updates, 10 October 2028. The table said 9 October 2028, one day early, so on that day those devices would have been reported as out of support while Microsoft was still updating them, and every DaysLeft count for them was one short. Enterprise and Education dates were already right.
+- A new test checks that every end date in the tables falls on a Tuesday, since Microsoft always ends servicing on a Patch Tuesday, so a slip like this is caught before release.
+- Date from Microsoft's Windows 11 release information page, checked 4 November 2026.
+
 ## 1.1.0 - unreleased
 
 - LTSC devices now get their real last day of updates instead of being skipped. Windows 10 Enterprise LTSC 2021 ends on 12 January 2027, so those devices are flagged as ending soon from mid-November 2026. IoT Enterprise LTSC (SKU 191) gets its longer date (2032 for LTSC 2021, 2034 for LTSC 2024). LTSC 2019 runs to 9 January 2029; LTSB 2016 ended on 13 October 2026.

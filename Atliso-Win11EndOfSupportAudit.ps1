@@ -1,5 +1,5 @@
 <#PSScriptInfo
-.VERSION 1.1.0
+.VERSION 1.1.1
 .GUID a5de3ed9-0800-47bc-b68e-092904db644e
 .AUTHOR Atliso
 .COMPANYNAME Atliso
@@ -11,7 +11,7 @@
 .EXTERNALMODULEDEPENDENCIES
 .REQUIREDSCRIPTS
 .EXTERNALSCRIPTDEPENDENCIES
-.RELEASENOTES LTSC devices get their real end date (LTSC 2021 ends 12 Jan 2027). Adds Windows 11 26H1 (build 28000).
+.RELEASENOTES Windows 11 26H2 Home and Pro end date corrected to 10 Oct 2028 (was one day early).
 #>
 
 <#
@@ -65,7 +65,7 @@ $IotLtscSkus    = 191                                   # IoT Enterprise LTSC: l
 # a build that isn't listed is reported as Unknown rather than given another release's dates.
 $Lifecycle = @{
   28000 = @{ Release = '26H1'; Consumer = '2028-03-14'; Enterprise = '2029-03-13' }   # new devices only, no in-place update
-  26300 = @{ Release = '26H2'; Consumer = '2028-10-09'; Enterprise = '2029-10-09' }
+  26300 = @{ Release = '26H2'; Consumer = '2028-10-10'; Enterprise = '2029-10-09' }
   26200 = @{ Release = '25H2'; Consumer = '2027-10-12'; Enterprise = '2028-10-10' }
   26100 = @{ Release = '24H2'; Consumer = '2026-10-13'; Enterprise = '2027-10-12' }
   22631 = @{ Release = '23H2'; Consumer = '2025-11-11'; Enterprise = '2026-11-10' }
